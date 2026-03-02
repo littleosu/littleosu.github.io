@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅行记账助手</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6', // 蓝色
+                        secondary: '#10b981', // 绿色
+                        accent: '#f59e0b', // 橙色
+                        light: '#f3f4f6',
+                        dark: '#1f2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out'
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass {
+                background: rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(4px);
+                -webkit-backdrop-filter: blur(4px);
+                border: 1px solid rgba(255, 255, 255, 0.18);
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+        }
+        
+        /* 自定义样式 */
+        body {
+            background-color: #f0f9ff;
+            background-image: 
+                radial-gradient(at 80% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
+                radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .nav-item {
+            transition: all 0.3s ease;
+        }
+        
+        .nav-item.active {
+            color: #3b82f6;
+            border-bottom: 2px solid #3b82f6;
+        }
+        
+        .expense-item {
+            transition: all 0.3s ease;
+        }
+        
+        .expense-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .category-icon {
+            transition: all 0.3s ease;
+        }
+        
+        .category-item:hover .category-icon {
+            transform: scale(1.1);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .input-focus {
+            @apply focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none;
+        }
+        
+        .btn-primary {
+            @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-all duration-300 flex items-center justify-center gap-2;
+        }
+        
+        .btn-secondary {
+            @apply bg-secondary text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-all duration-300 flex items-center justify-center gap-2;
+        }
+        
+        .btn-accent {
+            @apply bg-accent text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-all duration-300 flex items-center justify-center gap-2;
+        }
+        
+        .card {
+            @apply bg-white rounded-xl shadow-md p-4 transition-all duration-300 hover:shadow-lg;
+        }
+        
+        .badge {
+            @apply px-2 py-1 text-xs rounded-full font-medium;
+        }
+        
+        .badge-blue {
+            @apply bg-blue-100 text-blue-800;
+        }
+        
+        .badge-green {
+            @apply bg-green-100 text-green-800;
+        }
+        
+        .badge-orange {
+            @apply bg-orange-100 text-orange-800;
+        }
+        
+        .badge-purple {
+            @apply bg-purple-100 text-purple-800;
+        }
+        
+        .badge-red {
+            @apply bg-red-100 text-red-800;
+        }
+        
+        .badge-yellow {
+            @apply bg-yellow-100 text-yellow-800;
+        }
+        
+        .badge-pink {
+            @apply bg-pink-100 text-pink-800;
+        }
+        
+        .badge-gray {
+            @apply bg-gray-100 text-gray-800;
+        }
+    </style>
+</head>
+<body class="min-h-screen font-sans text-dark">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa fa-suitcase text-primary text-2xl"></i>
+                <h1 class="text-xl font-bold text-primary">旅行记账助手</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <button id="resetData" class="text-sm text-gray-500 hover:text-red-500 transition-colors">
+                    <i class="fa fa-refresh mr-1"></i>重置数据
+                </button>
+                <button id="exportData" class="text-sm text-gray-500 hover:text-primary transition-colors">
+                    <i class="fa fa-download mr-1"></i>导出数据
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-6 pb-24">
+        <!-- 登记页面 -->
+        <section id="add-expense" class="tab-content active animate-fade-in">
+            <div class="card max-w-2xl mx-auto">
+                <h2 class="text-2xl font-bold mb-6 text-center text-primary">添加费用</h2>
+                
+                <form id="expenseForm" class="space-y-6">
+                    <!-- 费用类型 -->
+                    <div>
+                        <label for="category" class="block text-sm font-medium text-gray-700 mb-2">费用类型</label>
+                        <div class="grid grid-cols-4 gap-3">
+                            <div class="category-item">
+                                <input type="radio" id="category-food" name="category" value="餐饮" class="hidden peer" checked>
+                                <label for="category-food" class="flex flex-col items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50">
+                                    <i class="fa fa-cutlery text-2xl text-primary category-icon"></i>
+                                    <span class="mt-2 text-sm">餐饮</span>
+                                </label>
+                            </div>
+                            <div class="category-item">
+                                <input type="radio" id="category-transport" name="category" value="交通" class="hidden peer">
+                                <label for="category-transport" class="flex flex-col items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50">
+                                    <i class="fa fa-car text-2xl text-primary category-icon"></i>
+                                    <span class="mt-2 text-sm">交通</span>
+                                </label>
+                            </div>
+                            <div class="category-item">
+                                <input type="radio" id="category-accommodation" name="category" value="住宿" class="hidden peer">
+                                <label for="category-accommodation" class="flex flex-col items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50">
+                                    <i class="fa fa-bed text-2xl text-primary category-icon"></i>
+                                    <span class="mt-2 text-sm">住宿</span>
+                                </label>
+                            </div>
+                            <div class="category-item">
+                                <input type="radio" id="category-shopping" name="category" value="购物" class="hidden peer">
+                                <label for="category-shopping" class="flex flex-col items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50">
+                                    <i class="fa fa-shopping-bag text-2xl text-primary category-icon"></i>
+                                    <span class="mt-2 text-sm">购物</span>
+                                </label>
+                            </div>
+                            <div class="category-item">
+                                <input type="radio" id="category-entertainment" name="category" value="娱乐" class="hidden peer">
+                                <label for="category-entertainment" class="flex flex-col items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50">
+                                    <i class="fa fa-film text-2xl text-primary category-icon"></i>
+                                    <span class="mt-2 text-sm">娱乐</span>
+                                </label>
+                            </div>
+                            <div class="category-item">
+                                <input type="radio" id="category-ticket" name="category" value="门票" class="hidden peer">
+                                <label for="category-ticket" class="flex flex-col items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50">
+                                    <i class="fa fa-ticket text-2xl text-primary category-icon"></i>
+                                    <span class="mt-2 text-sm">门票</span>
+                                </label>
+                            </div>
+                            <div class="category-item">
+                                <input type="radio" id="category-other" name="category" value="其他" class="hidden peer">
+                                <label for="category-other" class="flex flex-col items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50">
+                                    <i class="fa fa-ellipsis-h text-2xl text-primary category-icon"></i>
+                                    <span class="mt-2 text-sm">其他</span>
+                                </label>
+                            </div>
+                            <div class="category-item">
+                                <input type="radio" id="category-custom" name="category" value="自定义" class="hidden peer">
+                                <label for="category-custom" class="flex flex-col items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50">
+                                    <i class="fa fa-plus text-2xl text-primary category-icon"></i>
+                                    <span class="mt-2 text-sm">自定义</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="customCategoryContainer" class="mt-3 hidden">
+                            <input type="text" id="customCategory" placeholder="输入自定义类型" class="w-full px-3 py-2 border border-gray-300 rounded-md input-focus">
+                        </div>
+                    </div>
+                    
+                    <!-- 付款人 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">付款人</label>
+                        <div class="flex gap-4">
+                            <div class="flex-1">
+                                <input type="radio" id="payer-1" name="payer" value="肖瑶" class="hidden peer" checked>
+                                <label for="payer-1" class="flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50 w-full">
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-primary font-bold">X</div>
+                                    <span class="ml-3">肖瑶</span>
+                                </label>
+                            </div>
+                            <div class="flex-1">
+                                <input type="radio" id="payer-2" name="payer" value="樊宁馨" class="hidden peer">
+                                <label for="payer-2" class="flex items-center justify-center p-3 border-2 rounded-lg cursor-pointer transition-all peer-checked:border-primary peer-checked:bg-blue-50 w-full">
+                                    <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-secondary font-bold">F</div>
+                                    <span class="ml-3">樊宁馨</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 费用描述 -->
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700 mb-2">费用描述</label>
+                        <input type="text" id="description" name="description" placeholder="例如：午餐、出租车、酒店等" class="w-full px-3 py-3 border border-gray-300 rounded-md input-focus">
+                    </div>
+                    
+                    <!-- 金额 -->
+                    <div>
+                        <label for="amount" class="block text-sm font-medium text-gray-700 mb-2">金额 (¥)</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">¥</span>
+                            <input type="number" id="amount" name="amount" min="0" step="0.01" placeholder="0.00" class="w-full pl-8 pr-3 py-3 border border-gray-300 rounded-md input-focus text-lg font-medium">
+                        </div>
+                    </div>
+                    
+                    <!-- 日期 -->
+                    <div>
+                        <label for="date" class="block text-sm font-medium text-gray-700 mb-2">日期</label>
+                        <input type="date" id="date" name="date" class="w-full px-3 py-3 border border-gray-300 rounded-md input-focus">
+                    </div>
+                    
+                    <!-- 提交按钮 -->
+                    <div class="pt-4">
+                        <button type="submit" class="btn-primary w-full py-3 text-lg">
+                            <i class="fa fa-plus-circle"></i>
+                            添加费用
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- 汇总页面 -->
+        <section id="expense-summary" class="tab-content">
+            <div class="max-w-4xl mx-auto space-y-6">
+                <!-- 总览卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="card bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-primary">
+                        <h3 class="text-sm text-gray-500 font-medium">总支出</h3>
+                        <div class="mt-2 flex items-end">
+                            <span class="text-2xl font-bold">¥<span id="totalAmount">0.00</span></span>
+                        </div>
+                    </div>
+                    <div class="card bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-secondary">
+                        <h3 class="text-sm text-gray-500 font-medium">人均支出</h3>
+                        <div class="mt-2 flex items-end">
+                            <span class="text-2xl font-bold">¥<span id="averageAmount">0.00</span></span>
+                        </div>
+                    </div>
+                    <div class="card bg-gradient-to-br from-amber-50 to-amber-100 border-l-4 border-accent">
+                        <h3 class="text-sm text-gray-500 font-medium">结算状态</h3>
+                        <div class="mt-2 flex items-center">
+                            <span id="balanceStatus" class="text-lg font-medium">待结算</span>
+                            <i id="balanceIcon" class="fa fa-exclamation-circle ml-2 text-accent"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 个人支出卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="card">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-primary font-bold">X</div>
+                                <h3 class="ml-3 font-medium">肖瑶支出</h3>
+                            </div>
+                            <span class="text-xl font-bold">¥<span id="userAAmount">0.00</span></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="userAProgress" class="bg-primary h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500 flex justify-between">
+                            <span>占总支出比例</span>
+                            <span id="userARatio">0%</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-secondary font-bold">F</div>
+                                <h3 class="ml-3 font-medium">樊宁馨支出</h3>
+                            </div>
+                            <span class="text-xl font-bold">¥<span id="userBAmount">0.00</span></span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="userBProgress" class="bg-secondary h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500 flex justify-between">
+                            <span>占总支出比例</span>
+                            <span id="userBRatio">0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 结算建议卡片 -->
+                <div id="settlementCard" class="card bg-gradient-to-r from-indigo-50 to-purple-50 hidden">
+                    <h3 class="text-lg font-bold mb-3 text-indigo-700 flex items-center">
+                        <i class="fa fa-calculator mr-2"></i>
+                        结算建议
+                    </h3>
+                    <div id="settlementSuggestion" class="p-4 bg-white rounded-lg shadow-sm">
+                        <!-- 结算建议内容将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 费用列表 -->
+                <div class="card">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-bold">费用记录</h3>
+                        <div class="flex items-center gap-2">
+                            <select id="sortExpenses" class="px-3 py-1 border border-gray-300 rounded-md text-sm input-focus">
+                                <option value="date-desc">日期 (近到远)</option>
+                                <option value="date-asc">日期 (远到近)</option>
+                                <option value="amount-desc">金额 (高到低)</option>
+                                <option value="amount-asc">金额 (低到高)</option>
+                                <option value="category">分类</option>
+                                <option value="payer">付款人</option>
+                            </select>
+                            <button id="filterExpenses" class="text-gray-500 hover:text-primary">
+                                <i class="fa fa-filter"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="expenseList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+                        <!-- 费用列表将通过JS动态生成 -->
+                        <div class="text-center text-gray-500 py-8">
+                            <i class="fa fa-clipboard text-4xl mb-3"></i>
+                            <p>暂无费用记录</p>
+                            <p class="text-sm mt-2">在"添加费用"页面开始记录你的旅行支出吧</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 数据分析页面 -->
+        <section id="expense-analysis" class="tab-content">
+            <div class="max-w-4xl mx-auto space-y-6">
+                <!-- 总览卡片 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="card">
+                        <h3 class="text-lg font-bold mb-4">支出分类占比</h3>
+                        <div class="h-64">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-lg font-bold mb-4">日支出趋势</h3>
+                        <div class="h-64">
+                            <canvas id="dailyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 分类详情 -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">分类详情</h3>
+                    <div id="categoryDetails" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- 分类详情将通过JS动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 付款人对比 -->
+                <div class="card">
+                    <h3 class="text-lg font-bold mb-4">付款人对比</h3>
+                    <div class="h-64">
+                        <canvas id="payerChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- 旅行统计 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="card">
+                        <h3 class="text-sm text-gray-500 font-medium">总交易次数</h3>
+                        <div class="mt-2">
+                            <span id="totalTransactions" class="text-2xl font-bold">0</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-sm text-gray-500 font-medium">单笔最大支出</h3>
+                        <div class="mt-2">
+                            <span class="text-2xl font-bold">¥<span id="maxTransaction">0.00</span></span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 class="text-sm text-gray-500 font-medium">平均每笔支出</h3>
+                        <div class="mt-2">
+                            <span class="text-2xl font-bold">¥<span id="avgTransaction">0.00</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 底部导航栏 -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-around">
+                <button class="nav-item active flex flex-col items-center py-3 px-6 w-1/3" data-tab="add-expense">
+                    <i class="fa fa-plus-circle text-xl"></i>
+                    <span class="text-xs mt-1">添加费用</span>
+                </button>
+                <button class="nav-item flex flex-col items-center py-3 px-6 w-1/3" data-tab="expense-summary">
+                    <i class="fa fa-list-alt text-xl"></i>
+                    <span class="text-xs mt-1">费用汇总</span>
+                </button>
+                <button class="nav-item flex flex-col items-center py-3 px-6 w-1/3" data-tab="expense-analysis">
+                    <i class="fa fa-bar-chart text-xl"></i>
+                    <span class="text-xs mt-1">数据分析</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 提示弹窗 -->
+    <div id="toast" class="fixed top-4 right-4 bg-white shadow-lg rounded-lg px-4 py-3 transform translate-x-full transition-transform duration-300 z-50 flex items-center">
+        <i id="toastIcon" class="fa fa-check-circle text-green-500 mr-2"></i>
+        <span id="toastMessage">操作成功</span>
+    </div>
+
+    <!-- 筛选弹窗 -->
+    <div id="filterModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 w-5/6 max-w-md animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">筛选费用</h3>
+                <button id="closeFilter" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">付款人</label>
+                    <div class="flex gap-3">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="filter-payer-all" class="form-checkbox text-primary" checked>
+                            <span class="ml-2">全部</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="filter-payer-a" class="form-checkbox text-primary" checked>
+                            <span class="ml-2">肖瑶</span>
+                        </label>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="filter-payer-b" class="form-checkbox text-primary" checked>
+                            <span class="ml-2">樊宁馨</span>
+                        </label>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">费用类型</label>
+                    <div id="filterCategories" class="grid grid-cols-2 gap-2">
+                        <!-- 分类筛选将通过JS动态生成 -->
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">金额范围</label>
+                    <div class="flex items-center gap-3">
+                        <input type="number" id="filter-min-amount" placeholder="最小" class="flex-1 px-3 py-2 border border-gray-300 rounded-md input-focus">
+                        <span>-</span>
+                        <input type="number" id="filter-max-amount" placeholder="最大" class="flex-1 px-3 py-2 border border-gray-300 rounded-md input-focus">
+                    </div>
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button id="applyFilter" class="btn-primary flex-1">应用筛选</button>
+                    <button id="resetFilter" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex-1">重置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑费用弹窗 -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+        <div class="bg-white rounded-xl p-6 w-5/6 max-w-md animate-slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold">编辑费用</h3>
+                <button id="closeEdit" class="text-gray-500 hover:text-gray-700">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <form id="editForm" class="space-y-4">
+                <input type="hidden" id="edit-id">
+                <div>
+                    <label for="edit-category" class="block text-sm font-medium text-gray-700 mb-2">费用类型</label>
+                    <input type="text" id="edit-category" class="w-full px-3 py-2 border border-gray-300 rounded-md input-focus" readonly>
+                </div>
+                <div>
+                    <label for="edit-payer" class="block text-sm font-medium text-gray-700 mb-2">付款人</label>
+                    <select id="edit-payer" class="w-full px-3 py-2 border border-gray-300 rounded-md input-focus">
+                        <option value="肖瑶">肖瑶</option>
+                        <option value="樊宁馨">樊宁馨</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="edit-description" class="block text-sm font-medium text-gray-700 mb-2">费用描述</label>
+                    <input type="text" id="edit-description" class="w-full px-3 py-2 border border-gray-300 rounded-md input-focus">
+                </div>
+                <div>
+                    <label for="edit-amount" class="block text-sm font-medium text-gray-700 mb-2">金额 (¥)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">¥</span>
+                        <input type="number" id="edit-amount" min="0" step="0.01" class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md input-focus">
+                    </div>
+                </div>
+                <div>
+                    <label for="edit-date" class="block text-sm font-medium text-gray-700 mb-2">日期</label>
+                    <input type="date" id="edit-date" class="w-full px-3 py-2 border border-gray-300 rounded-md input-focus">
+                </div>
+                <div class="pt-4 flex gap-3">
+                    <button type="submit" class="btn-primary flex-1">保存修改</button>
+                    <button type="button" id="deleteExpense" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex-1">删除</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 初始化数据
+        let expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
+        let currentEditId = null;
+        let filters = {
+            payers: ['肖瑶', '樊宁馨'],
+            categories: [],
+            minAmount: null,
+            maxAmount: null
+        };
+        
+        // 图表实例缓存
+        let categoryChartInstance = null;
+        let dailyChartInstance = null;
+        let payerChartInstance = null;
+        
+        // 设置当前日期为默认值
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date').value = today;
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化标签页切换
+            initTabs();
+            
+            // 初始化表单提交
+            initForms();
+            
+            // 初始化筛选功能
+            initFilters();
+            
+            // 初始化编辑功能
+            initEditModal();
+            
+            // 初始化数据显示
+            updateSummary();
+            updateAnalysis();
+            
+            // 初始化其他功能
+            initOtherFunctions();
+        });
+        
+        // 初始化标签页切换
+        function initTabs() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            navItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // 更新导航项状态
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 更新标签内容显示
+                    tabContents.forEach(content => {
+                        content.classList.remove('active');
+                        if (content.id === tabId) {
+                            content.classList.add('active');
+                            
+                            // 如果切换到分析页面，更新图表
+                            if (tabId === 'expense-analysis') {
+                                updateCharts();
+                            }
+                        }
+                    });
+                });
+            });
+        }
+        
+        // 初始化表单提交
+        function initForms() {
+            // 添加费用表单
+            const expenseForm = document.getElementById('expenseForm');
+            expenseForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 获取表单数据
+                let category = document.querySelector('input[name="category"]:checked').value;
+                if (category === '自定义') {
+                    category = document.getElementById('customCategory').value || '其他';
+                }
+                
+                const payer = document.querySelector('input[name="payer"]:checked').value;
+                const description = document.getElementById('description').value.trim();
+                const amount = parseFloat(document.getElementById('amount').value);
+                const date = document.getElementById('date').value;
+                
+                // 验证表单
+                if (!description) {
+                    showToast('请输入费用描述', 'error');
+                    return;
+                }
+                
+                if (!amount || amount <= 0) {
+                    showToast('请输入有效的金额', 'error');
+                    return;
+                }
+                
+                // 创建费用对象
+                const expense = {
+                    id: Date.now().toString(),
+                    category,
+                    payer,
+                    description,
+                    amount,
+                    date,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // 添加到数组并保存
+                expenses.push(expense);
+                saveExpenses();
+                
+                // 更新显示
+                updateSummary();
+                updateAnalysis();
+                
+                // 重置表单
+                expenseForm.reset();
+                document.getElementById('date').value = today;
+                document.querySelector('input[name="category"][value="餐饮"]').checked = true;
+                document.querySelector('input[name="payer"][value="肖瑶"]').checked = true;
+                
+                // 显示成功提示
+                showToast('费用添加成功');
+            });
+            
+            // 自定义分类显示/隐藏
+            const categoryCustom = document.getElementById('category-custom');
+            const customCategoryContainer = document.getElementById('customCategoryContainer');
+            
+            categoryCustom.addEventListener('change', function() {
+                customCategoryContainer.classList.remove('hidden');
+            });
+            
+            document.querySelectorAll('input[name="category"]').forEach(radio => {
+                if (radio.id !== 'category-custom') {
+                    radio.addEventListener('change', function() {
+                        customCategoryContainer.classList.add('hidden');
+                    });
+                }
+            });
+        }
+        
+        // 初始化筛选功能
+        function initFilters() {
+            const filterExpensesBtn = document.getElementById('filterExpenses');
+            const filterModal = document.getElementById('filterModal');
+            const closeFilterBtn = document.getElementById('closeFilter');
+            const applyFilterBtn = document.getElementById('applyFilter');
+            const resetFilterBtn = document.getElementById('resetFilter');
+            const filterPayerAll = document.getElementById('filter-payer-all');
+            
+            // 打开筛选弹窗
+            filterExpensesBtn.addEventListener('click', function() {
+                // 填充分类筛选选项
+                populateCategoryFilters();
+                filterModal.classList.remove('hidden');
+            });
+            
+            // 关闭筛选弹窗
+            closeFilterBtn.addEventListener('click', function() {
+                filterModal.classList.add('hidden');
+            });
+            
+            // 应用筛选
+            applyFilterBtn.addEventListener('click', function() {
+                // 获取付款人筛选
+                const payerA = document.getElementById('filter-payer-a').checked;
+                const payerB = document.getElementById('filter-payer-b').checked;
+                
+                filters.payers = [];
+                if (payerA) filters.payers.push('肖瑶');
+                if (payerB) filters.payers.push('樊宁馨');
+                
+                // 获取分类筛选
+                filters.categories = [];
+                document.querySelectorAll('#filterCategories input[type="checkbox"]:checked').forEach(checkbox => {
+                    filters.categories.push(checkbox.value);
+                });
+                
+                // 获取金额范围筛选
+                const minAmount = document.getElementById('filter-min-amount').value;
+                const maxAmount = document.getElementById('filter-max-amount').value;
+                
+                filters.minAmount = minAmount ? parseFloat(minAmount) : null;
+                filters.maxAmount = maxAmount ? parseFloat(maxAmount) : null;
+                
+                // 应用筛选并更新显示
+                updateExpenseList();
+                filterModal.classList.add('hidden');
+                showToast('筛选已应用');
+            });
+            
+            // 重置筛选
+            resetFilterBtn.addEventListener('click', function() {
+                document.getElementById('filter-payer-all').checked = true;
+                document.getElementById('filter-payer-a').checked = true;
+                document.getElementById('filter-payer-b').checked = true;
+                document.getElementById('filter-min-amount').value = '';
+                document.getElementById('filter-max-amount').value = '';
+                
+                document.querySelectorAll('#filterCategories input[type="checkbox"]').forEach(checkbox => {
+                    checkbox.checked = true;
+                });
+            });
+            
+            // 全选/取消全选付款人
+            filterPayerAll.addEventListener('change', function() {
+                const checked = this.checked;
+                document.getElementById('filter-payer-a').checked = checked;
+                document.getElementById('filter-payer-b').checked = checked;
+            });
+            
+            // 点击模态框背景关闭
+            filterModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+        }
+        
+        // 填充分类筛选选项
+        function populateCategoryFilters() {
+            const filterCategories = document.getElementById('filterCategories');
+            filterCategories.innerHTML = '';
+            
+            // 获取所有唯一的分类
+            const categories = [...new Set(expenses.map(expense => expense.category))];
+            
+            // 添加全选选项
+            const allDiv = document.createElement('div');
+            allDiv.className = 'col-span-2';
+            allDiv.innerHTML = `
+                <label class="flex items-center">
+                    <input type="checkbox" id="filter-category-all" class="form-checkbox text-primary" checked>
+                    <span class="ml-2 font-medium">全部类型</span>
+                </label>
+            `;
+            filterCategories.appendChild(allDiv);
+            
+            // 添加分类选项
+            categories.forEach(category => {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label class="flex items-center">
+                        <input type="checkbox" class="form-checkbox text-primary filter-category" value="${category}" checked>
+                        <span class="ml-2">${category}</span>
+                    </label>
+                `;
+                filterCategories.appendChild(div);
+            });
+            
+            // 添加全选/取消全选事件
+            document.getElementById('filter-category-all').addEventListener('change', function() {
+                const checked = this.checked;
+                document.querySelectorAll('.filter-category').forEach(checkbox => {
+                    checkbox.checked = checked;
+                });
+            });
+        }
+        
+        // 初始化编辑功能
+        function initEditModal() {
+            const editModal = document.getElementById('editModal');
+            const closeEditBtn = document.getElementById('closeEdit');
+            const editForm = document.getElementById('editForm');
+            const deleteExpenseBtn = document.getElementById('deleteExpense');
+            
+            // 关闭编辑弹窗
+            closeEditBtn.addEventListener('click', function() {
+                editModal.classList.add('hidden');
+            });
+            
+            // 提交编辑表单
+            editForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const id = document.getElementById('edit-id').value;
+                const payer = document.getElementById('edit-payer').value;
+                const description = document.getElementById('edit-description').value.trim();
+                const amount = parseFloat(document.getElementById('edit-amount').value);
+                const date = document.getElementById('edit-date').value;
+                
+                // 验证表单
+                if (!description) {
+                    showToast('请输入费用描述', 'error');
+                    return;
+                }
+                
+                if (!amount || amount <= 0) {
+                    showToast('请输入有效的金额', 'error');
+                    return;
+                }
+                
+                // 更新费用
+                const index = expenses.findIndex(expense => expense.id === id);
+                if (index !== -1) {
+                    expenses[index].payer = payer;
+                    expenses[index].description = description;
+                    expenses[index].amount = amount;
+                    expenses[index].date = date;
+                    
+                    // 保存并更新显示
+                    saveExpenses();
+                    updateSummary();
+                    updateAnalysis();
+                    
+                    // 关闭弹窗
+                    editModal.classList.add('hidden');
+                    showToast('费用已更新');
+                }
+            });
+            
+            // 删除费用
+            deleteExpenseBtn.addEventListener('click', function() {
+                if (confirm('确定要删除这条费用记录吗？')) {
+                    const id = document.getElementById('edit-id').value;
+                    expenses = expenses.filter(expense => expense.id !== id);
+                    
+                    // 保存并更新显示
+                    saveExpenses();
+                    updateSummary();
+                    updateAnalysis();
+                    
+                    // 关闭弹窗
+                    editModal.classList.add('hidden');
+                    showToast('费用已删除');
+                }
+            });
+            
+            // 点击模态框背景关闭
+            editModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                }
+            });
+        }
+        
+        // 初始化其他功能
+        function initOtherFunctions() {
+            // 排序功能
+            document.getElementById('sortExpenses').addEventListener('change', function() {
+                updateExpenseList();
+            });
+            
+            // 重置数据
+            document.getElementById('resetData').addEventListener('click', function() {
+                if (confirm('确定要重置所有数据吗？此操作不可恢复。')) {
+                    expenses = [];
+                    saveExpenses();
+                    updateSummary();
+                    updateAnalysis();
+                    showToast('数据已重置');
+                }
+            });
+            
+            // 导出数据
+            document.getElementById('exportData').addEventListener('click', function() {
+                if (expenses.length === 0) {
+                    showToast('没有数据可导出', 'error');
+                    return;
+                }
+                
+                // 创建CSV内容
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "日期,类型,付款人,描述,金额\n";
+                
+                expenses.forEach(expense => {
+                    csvContent += `${expense.date},${expense.category},${expense.payer},${expense.description},${expense.amount}\n`;
+                });
+                
+                // 创建下载链接
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `旅行记账_${today}.csv`);
+                document.body.appendChild(link);
+                
+                // 触发下载
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast('数据已导出');
+            });
+        }
+        
+        // 保存费用数据到本地存储
+        function saveExpenses() {
+            localStorage.setItem('travelExpenses', JSON.stringify(expenses));
+        }
+        
+        // 显示提示弹窗
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastIcon = document.getElementById('toastIcon');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            // 设置提示类型
+            if (type === 'error') {
+                toastIcon.className = 'fa fa-exclamation-circle text-red-500 mr-2';
+            } else {
+                toastIcon.className = 'fa fa-check-circle text-green-500 mr-2';
+            }
+            
+            // 设置提示消息
+            toastMessage.textContent = message;
+            
+            // 显示提示
+            toast.classList.remove('translate-x-full');
+            
+            // 3秒后隐藏
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+            }, 3000);
+        }
+        
+        // 更新汇总页面
+        function updateSummary() {
+            // 计算总金额
+            const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            
+            // 计算每个用户的支出
+            const userAExpenses = expenses.filter(expense => expense.payer === '肖瑶');
+            const userBAmount = expenses.reduce((sum, expense) => expense.payer === '樊宁馨' ? sum + expense.amount : sum, 0);
+            const userAAmount = totalAmount - userBAmount;
+            
+            // 计算平均金额
+            const averageAmount = totalAmount / 2;
+            
+            // 更新总览卡片
+            document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
+            document.getElementById('averageAmount').textContent = averageAmount.toFixed(2);
+            document.getElementById('userAAmount').textContent = userAAmount.toFixed(2);
+            document.getElementById('userBAmount').textContent = userBAmount.toFixed(2);
+            
+            // 更新进度条
+            const userARatio = totalAmount > 0 ? (userAAmount / totalAmount) * 100 : 0;
+            const userBRatio = totalAmount > 0 ? (userBAmount / totalAmount) * 100 : 0;
+            
+            document.getElementById('userAProgress').style.width = `${userARatio}%`;
+            document.getElementById('userBProgress').style.width = `${userBRatio}%`;
+            document.getElementById('userARatio').textContent = `${userARatio.toFixed(1)}%`;
+            document.getElementById('userBRatio').textContent = `${userBRatio.toFixed(1)}%`;
+            
+            // 更新结算建议
+            updateSettlementSuggestion(userAAmount, userBAmount, averageAmount);
+            
+            // 更新费用列表
+            updateExpenseList();
+        }
+        
+        // 更新结算建议
+        function updateSettlementSuggestion(userAAmount, userBAmount, averageAmount) {
+            const settlementCard = document.getElementById('settlementCard');
+            const settlementSuggestion = document.getElementById('settlementSuggestion');
+            const balanceStatus = document.getElementById('balanceStatus');
+            const balanceIcon = document.getElementById('balanceIcon');
+            
+            // 如果没有费用记录，隐藏结算卡片
+            if (expenses.length === 0) {
+                settlementCard.classList.add('hidden');
+                balanceStatus.textContent = '待结算';
+                balanceStatus.className = 'text-lg font-medium';
+                balanceIcon.className = 'fa fa-exclamation-circle ml-2 text-accent';
+                return;
+            }
+            
+            // 计算差额
+            const diffA = userAAmount - averageAmount;
+            const diffB = userBAmount - averageAmount;
+            
+            // 显示结算卡片
+            settlementCard.classList.remove('hidden');
+            
+            // 更新结算建议
+            if (Math.abs(diffA) < 0.01) {
+                // 金额相等
+                settlementSuggestion.innerHTML = `
+                    <div class="text-center py-2">
+                        <i class="fa fa-check-circle text-green-500 text-3xl mb-2"></i>
+                        <p class="font-medium text-green-600">太棒了！你们的支出完全平衡</p>
+                        <p class="text-sm text-gray-500 mt-1">无需进行任何结算</p>
+                    </div>
+                `;
+                balanceStatus.textContent = '已平衡';
+                balanceStatus.className = 'text-lg font-medium text-green-600';
+                balanceIcon.className = 'fa fa-check-circle ml-2 text-green-500';
+            } else if (diffA > 0) {
+                // 肖瑶支出更多
+                const amountToPay = diffA.toFixed(2);
+                settlementSuggestion.innerHTML = `
+                    <div class="text-center py-2">
+                        <i class="fa fa-money text-blue-500 text-3xl mb-2"></i>
+                        <p class="font-medium text-gray-700">樊宁馨需要向肖瑶支付</p>
+                        <p class="text-2xl font-bold text-primary mt-1">¥${amountToPay}</p>
+                        <p class="text-sm text-gray-500 mt-2">以平衡双方支出</p>
+                    </div>
+                `;
+                balanceStatus.textContent = '待樊宁馨付款';
+                balanceStatus.className = 'text-lg font-medium text-blue-600';
+                balanceIcon.className = 'fa fa-arrow-right ml-2 text-blue-500';
+            } else {
+                // 樊宁馨支出更多
+                const amountToPay = Math.abs(diffA).toFixed(2);
+                settlementSuggestion.innerHTML = `
+                    <div class="text-center py-2">
+                        <i class="fa fa-money text-green-500 text-3xl mb-2"></i>
+                        <p class="font-medium text-gray-700">肖瑶需要向樊宁馨支付</p>
+                        <p class="text-2xl font-bold text-secondary mt-1">¥${amountToPay}</p>
+                        <p class="text-sm text-gray-500 mt-2">以平衡双方支出</p>
+                    </div>
+                `;
+                balanceStatus.textContent = '待肖瑶付款';
+                balanceStatus.className = 'text-lg font-medium text-green-600';
+                balanceIcon.className = 'fa fa-arrow-right ml-2 text-green-500';
+            }
+        }
+        
+        // 更新费用列表
+        function updateExpenseList() {
+            const expenseList = document.getElementById('expenseList');
+            const sortBy = document.getElementById('sortExpenses').value;
+            
+            // 应用筛选
+            let filteredExpenses = [...expenses];
+            
+            // 付款人筛选
+            if (filters.payers.length > 0) {
+                filteredExpenses = filteredExpenses.filter(expense => filters.payers.includes(expense.payer));
+            }
+            
+            // 分类筛选
+            if (filters.categories.length > 0) {
+                filteredExpenses = filteredExpenses.filter(expense => filters.categories.includes(expense.category));
+            }
+            
+            // 金额范围筛选
+            if (filters.minAmount !== null) {
+                filteredExpenses = filteredExpenses.filter(expense => expense.amount >= filters.minAmount);
+            }
+            if (filters.maxAmount !== null) {
+                filteredExpenses = filteredExpenses.filter(expense => expense.amount <= filters.maxAmount);
+            }
+            
+            // 排序
+            switch (sortBy) {
+                case 'date-desc':
+                    filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    break;
+                case 'date-asc':
+                    filteredExpenses.sort((a, b) => new Date(a.date) - new Date(b.date));
+                    break;
+                case 'amount-desc':
+                    filteredExpenses.sort((a, b) => b.amount - a.amount);
+                    break;
+                case 'amount-asc':
+                    filteredExpenses.sort((a, b) => a.amount - b.amount);
+                    break;
+                case 'category':
+                    filteredExpenses.sort((a, b) => a.category.localeCompare(b.category));
+                    break;
+                case 'payer':
+                    filteredExpenses.sort((a, b) => a.payer.localeCompare(b.payer));
+                    break;
+            }
+            
+            // 更新列表显示
+            if (filteredExpenses.length === 0) {
+                expenseList.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fa fa-clipboard text-4xl mb-3"></i>
+                        <p>暂无费用记录</p>
+                        <p class="text-sm mt-2">在"添加费用"页面开始记录你的旅行支出吧</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 生成费用列表HTML
+            let html = '';
+            filteredExpenses.forEach(expense => {
+                // 获取分类对应的徽章样式
+                let badgeClass = 'badge-blue';
+                switch (expense.category) {
+                    case '餐饮': badgeClass = 'badge-orange'; break;
+                    case '交通': badgeClass = 'badge-blue'; break;
+                    case '住宿': badgeClass = 'badge-purple'; break;
+                    case '购物': badgeClass = 'badge-pink'; break;
+                    case '娱乐': badgeClass = 'badge-red'; break;
+                    case '门票': badgeClass = 'badge-yellow'; break;
+                    case '其他': badgeClass = 'badge-gray'; break;
+                    default: badgeClass = 'badge-green';
+                }
+                
+                // 获取付款人样式
+                let payerClass = 'bg-blue-100 text-primary';
+                let payerInitial = 'X';
+                if (expense.payer === '樊宁馨') {
+                    payerClass = 'bg-green-100 text-secondary';
+                    payerInitial = 'F';
+                }
+                
+                html += `
+                    <div class="expense-item card flex items-center justify-between p-4">
+                        <div class="flex items-center gap-3 flex-1">
+                            <div class="w-10 h-10 rounded-full ${payerClass} flex items-center justify-center font-bold">${payerInitial}</div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="badge ${badgeClass}">${expense.category}</span>
+                                    <span class="text-sm text-gray-500">${expense.date}</span>
+                                </div>
+                                <p class="font-medium mt-1">${expense.description}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="text-lg font-bold">¥${expense.amount.toFixed(2)}</span>
+                            <button class="edit-expense text-gray-500 hover:text-primary" data-id="${expense.id}">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            expenseList.innerHTML = html;
+            
+            // 添加编辑事件监听
+            document.querySelectorAll('.edit-expense').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const expense = expenses.find(exp => exp.id === id);
+                    if (expense) {
+                        document.getElementById('edit-id').value = expense.id;
+                        document.getElementById('edit-category').value = expense.category;
+                        document.getElementById('edit-payer').value = expense.payer;
+                        document.getElementById('edit-description').value = expense.description;
+                        document.getElementById('edit-amount').value = expense.amount;
+                        document.getElementById('edit-date').value = expense.date;
+                        
+                        // 显示编辑弹窗
+                        document.getElementById('editModal').classList.remove('hidden');
+                    }
+                });
+            });
+        }
+        
+        // 更新分析页面
+        function updateAnalysis() {
+            // 计算基本统计数据
+            const totalTransactions = expenses.length;
+            const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            const maxTransaction = expenses.length > 0 ? Math.max(...expenses.map(exp => exp.amount)) : 0;
+            const avgTransaction = totalTransactions > 0 ? totalAmount / totalTransactions : 0;
+            
+            // 更新统计卡片
+            document.getElementById('totalTransactions').textContent = totalTransactions;
+            document.getElementById('maxTransaction').textContent = maxTransaction.toFixed(2);
+            document.getElementById('avgTransaction').textContent = avgTransaction.toFixed(2);
+            
+            // 更新分类详情
+            updateCategoryDetails();
+            
+            // 如果当前在分析页面，更新图表
+            if (document.getElementById('expense-analysis').classList.contains('active')) {
+                updateCharts();
+            }
+        }
+        
+        // 更新分类详情
+        function updateCategoryDetails() {
+            const categoryDetails = document.getElementById('categoryDetails');
+            
+            // 按分类汇总
+            const categorySummary = {};
+            expenses.forEach(expense => {
+                if (!categorySummary[expense.category]) {
+                    categorySummary[expense.category] = {
+                        count: 0,
+                        total: 0,
+                        avg: 0
+                    };
+                }
+                categorySummary[expense.category].count++;
+                categorySummary[expense.category].total += expense.amount;
+            });
+            
+            // 计算平均值
+            Object.keys(categorySummary).forEach(category => {
+                categorySummary[category].avg = categorySummary[category].total / categorySummary[category].count;
+            });
+            
+            // 生成HTML
+            let html = '';
+            if (Object.keys(categorySummary).length === 0) {
+                html = `
+                    <div class="col-span-2 text-center text-gray-500 py-8">
+                        <i class="fa fa-pie-chart text-4xl mb-3"></i>
+                        <p>暂无分类数据</p>
+                        <p class="text-sm mt-2">添加费用记录后将显示分类分析</p>
+                    </div>
+                `;
+            } else {
+                Object.keys(categorySummary).forEach(category => {
+                    const summary = categorySummary[category];
+                    let badgeClass = 'badge-blue';
+                    switch (category) {
+                        case '餐饮': badgeClass = 'badge-orange'; break;
+                        case '交通': badgeClass = 'badge-blue'; break;
+                        case '住宿': badgeClass = 'badge-purple'; break;
+                        case '购物': badgeClass = 'badge-pink'; break;
+                        case '娱乐': badgeClass = 'badge-red'; break;
+                        case '门票': badgeClass = 'badge-yellow'; break;
+                        case '其他': badgeClass = 'badge-gray'; break;
+                        default: badgeClass = 'badge-green';
+                    }
+                    
+                    html += `
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="badge ${badgeClass}">${category}</span>
+                                <span class="font-medium">${summary.count} 笔</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span>总计: ¥${summary.total.toFixed(2)}</span>
+                                <span>平均: ¥${summary.avg.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            categoryDetails.innerHTML = html;
+        }
+        
+        // 更新图表
+        function updateCharts() {
+            // 销毁旧图表
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            if (dailyChartInstance) dailyChartInstance.destroy();
+            if (payerChartInstance) payerChartInstance.destroy();
+            
+            // 1. 分类占比图表
+            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+            const categoryData = {};
+            
+            expenses.forEach(expense => {
+                if (!categoryData[expense.category]) {
+                    categoryData[expense.category] = 0;
+                }
+                categoryData[expense.category] += expense.amount;
+            });
+            
+            const categoryLabels = Object.keys(categoryData);
+            const categoryValues = Object.values(categoryData);
+            const categoryColors = [
+                '#f97316', // 橙色 - 餐饮
+                '#3b82f6', // 蓝色 - 交通
+                '#8b5cf6', // 紫色 - 住宿
+                '#ec4899', // 粉色 - 购物
+                '#ef4444', // 红色 - 娱乐
+                '#eab308', // 黄色 - 门票
+                '#6b7280', // 灰色 - 其他
+                '#10b981', // 绿色 - 自定义
+            ];
+            
+            categoryChartInstance = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: categoryLabels,
+                    datasets: [{
+                        data: categoryValues,
+                        backgroundColor: categoryColors.slice(0, categoryLabels.length),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        }
+                    }
+                }
+            });
+            
+            // 2. 日支出趋势图表
+            const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+            const dailyData = {};
+            
+            expenses.forEach(expense => {
+                if (!dailyData[expense.date]) {
+                    dailyData[expense.date] = 0;
+                }
+                dailyData[expense.date] += expense.amount;
+            });
+            
+            // 按日期排序
+            const sortedDates = Object.keys(dailyData).sort((a, b) => new Date(a) - new Date(b));
+            const dailyValues = sortedDates.map(date => dailyData[date]);
+            
+            dailyChartInstance = new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: sortedDates,
+                    datasets: [{
+                        label: '日支出',
+                        data: dailyValues,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '金额 (¥)'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 3. 付款人对比图表
+            const payerCtx = document.getElementById('payerChart').getContext('2d');
+            const userAAmount = expenses.reduce((sum, expense) => expense.payer === '肖瑶' ? sum + expense.amount : sum, 0);
+            const userBAmount = expenses.reduce((sum, expense) => expense.payer === '樊宁馨' ? sum + expense.amount : sum, 0);
+            
+            payerChartInstance = new Chart(payerCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['肖瑶', '樊宁馨'],
+                    datasets: [{
+                        label: '支出金额',
+                        data: [userAAmount, userBAmount],
+                        backgroundColor: ['#3b82f6', '#10b981'],
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '金额 (¥)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
