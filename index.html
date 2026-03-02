@@ -4,6 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>广州顺德4天3晚完美行程</title>
+    <!-- 微信分享元数据 -->
+    <meta name="description" content="广州顺德4天3晚完美行程规划，包含详细的景点、美食和住宿安排，让您的旅程更加便捷愉快！">
+    <meta name="keywords" content="广州,顺德,旅游,行程,美食,攻略">
+    <meta property="og:title" content="广州顺德4天3晚完美行程">
+    <meta property="og:description" content="探索美食之都，感受岭南文化，4天3晚完美行程规划">
+    <meta property="og:image" content="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1457075927381049348~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1787983970&x-signature=cKowZmaIsIPWQTZyhqRAiW4GZx4%3D">
+    <meta property="og:url" content="https://username.github.io">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="广州顺德4天3晚完美行程">
+    <meta name="twitter:description" content="探索美食之都，感受岭南文化，4天3晚完美行程规划">
+    <meta name="twitter:image" content="https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1457075927381049348~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1787983970&x-signature=cKowZmaIsIPWQTZyhqRAiW4GZx4%3D">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -340,7 +352,7 @@
                             <ul class="list-disc list-inside text-gray-600 space-y-2">
                                 <li>长途飞行后好好休息，为接下来的行程养精蓄锐</li>
                                 <li>酒店附近有便利店，可以购买一些日用品</li>
-                                <li>提前准备好健康码，方便第二天出行</li>
+                                <li>整理好行李，准备第二天的广州顺德之旅</li>
                             </ul>
                         </div>
                     </div>
@@ -701,9 +713,58 @@
     </div>
 
     <!-- 返回顶部按钮 -->
-    <button id="backToTop" class="fixed bottom-20 right-6 bg-primary text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center opacity-0 transition-opacity duration-300">
+    <button id="backToTop" class="fixed bottom-20 right-6 bg-primary text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center opacity-0 transition-opacity duration-300 z-40">
         <i class="fa fa-arrow-up"></i>
     </button>
+    
+    <!-- 分享按钮 -->
+    <button id="shareBtn" class="fixed bottom-36 right-6 bg-secondary text-white w-12 h-12 rounded-full shadow-lg flex items-center justify-center opacity-0 transition-opacity duration-300 z-40">
+        <i class="fa fa-share-alt"></i>
+    </button>
+    
+    <!-- 分享面板 -->
+    <div id="sharePanel" class="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg transform translate-y-full transition-transform duration-300 z-50 p-6">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold">分享行程</h3>
+            <button id="closeSharePanel" class="text-gray-500 hover:text-gray-700">
+                <i class="fa fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="grid grid-cols-4 gap-4 text-center">
+            <div class="share-item">
+                <div class="w-14 h-14 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fa fa-weixin text-white text-2xl"></i>
+                </div>
+                <p class="text-sm">微信好友</p>
+            </div>
+            <div class="share-item">
+                <div class="w-14 h-14 bg-green-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fa fa-users text-white text-2xl"></i>
+                </div>
+                <p class="text-sm">朋友圈</p>
+            </div>
+            <div class="share-item">
+                <div class="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fa fa-qq text-white text-2xl"></i>
+                </div>
+                <p class="text-sm">QQ</p>
+            </div>
+            <div class="share-item">
+                <div class="w-14 h-14 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                    <i class="fa fa-weibo text-white text-2xl"></i>
+                </div>
+                <p class="text-sm">微博</p>
+            </div>
+        </div>
+        <div class="mt-6">
+            <button id="copyLinkBtn" class="w-full bg-primary text-white py-3 rounded-lg font-bold">
+                <i class="fa fa-link mr-2"></i> 复制链接
+            </button>
+        </div>
+    </div>
+    
+    <!-- 分享遮罩 -->
+    <div id="shareOverlay" class="fixed inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-300 z-40"></div>
 
     <script>
         // 初始化AOS动画
@@ -722,12 +783,25 @@
             // 返回顶部按钮
             const backToTopBtn = document.getElementById('backToTop');
             
+            // 分享按钮和面板
+            const shareBtn = document.getElementById('shareBtn');
+            const sharePanel = document.getElementById('sharePanel');
+            const closeSharePanel = document.getElementById('closeSharePanel');
+            const shareOverlay = document.getElementById('shareOverlay');
+            const copyLinkBtn = document.getElementById('copyLinkBtn');
+            const shareItems = document.querySelectorAll('.share-item');
+            
+            // 当前页面URL
+            const currentUrl = window.location.href;
+            
             window.addEventListener('scroll', function() {
-                // 显示/隐藏返回顶部按钮
+                // 显示/隐藏返回顶部按钮和分享按钮
                 if (window.pageYOffset > 300) {
                     backToTopBtn.style.opacity = '1';
+                    shareBtn.style.opacity = '1';
                 } else {
                     backToTopBtn.style.opacity = '0';
+                    shareBtn.style.opacity = '0';
                 }
                 
                 // 更新导航栏激活状态
@@ -779,7 +853,140 @@
                     });
                 });
             });
+            
+            // 分享按钮点击事件
+            shareBtn.addEventListener('click', function() {
+                sharePanel.classList.remove('translate-y-full');
+                shareOverlay.classList.remove('opacity-0', 'pointer-events-none');
+            });
+            
+            // 关闭分享面板
+            closeSharePanel.addEventListener('click', function() {
+                sharePanel.classList.add('translate-y-full');
+                shareOverlay.classList.add('opacity-0', 'pointer-events-none');
+            });
+            
+            shareOverlay.addEventListener('click', function() {
+                sharePanel.classList.add('translate-y-full');
+                shareOverlay.classList.add('opacity-0', 'pointer-events-none');
+            });
+            
+            // 复制链接
+            copyLinkBtn.addEventListener('click', function() {
+                navigator.clipboard.writeText(currentUrl).then(function() {
+                    // 复制成功提示
+                    const originalText = copyLinkBtn.innerHTML;
+                    copyLinkBtn.innerHTML = '<i class="fa fa-check mr-2"></i> 链接已复制';
+                    copyLinkBtn.classList.add('bg-green-500');
+                    
+                    setTimeout(function() {
+                        copyLinkBtn.innerHTML = originalText;
+                        copyLinkBtn.classList.remove('bg-green-500');
+                    }, 2000);
+                }).catch(function(err) {
+                    console.error('复制失败:', err);
+                    alert('复制失败，请手动复制链接');
+                });
+            });
+            
+            // 分享到社交媒体
+            shareItems.forEach((item, index) => {
+                item.addEventListener('click', function() {
+                    let shareUrl = '';
+                    const title = '广州顺德4天3晚完美行程';
+                    const desc = '探索美食之都，感受岭南文化，4天3晚完美行程规划';
+                    const imgUrl = 'https://p26-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1457075927381049348~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1787983970&x-signature=cKowZmaIsIPWQTZyhqRAiW4GZx4%3D';
+                    
+                    switch(index) {
+                        case 0: // 微信好友
+                            // 微信好友分享需要通过微信JS-SDK实现，这里只是提示
+                            alert('请打开微信，使用"扫一扫"扫描页面二维码，或复制链接分享给好友');
+                            break;
+                        case 1: // 朋友圈
+                            // 朋友圈分享需要通过微信JS-SDK实现，这里只是提示
+                            alert('请打开微信，使用"扫一扫"扫描页面二维码，或复制链接分享到朋友圈');
+                            break;
+                        case 2: // QQ
+                            shareUrl = `https://connect.qq.com/widget/shareqq/index.html?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(title)}&desc=${encodeURIComponent(desc)}&pics=${encodeURIComponent(imgUrl)}`;
+                            window.open(shareUrl, '_blank');
+                            break;
+                        case 3: // 微博
+                            shareUrl = `https://service.weibo.com/share/share.php?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(title + ' ' + desc)}&pic=${encodeURIComponent(imgUrl)}`;
+                            window.open(shareUrl, '_blank');
+                            break;
+                    }
+                    
+                    // 关闭分享面板
+                    sharePanel.classList.add('translate-y-full');
+                    shareOverlay.classList.add('opacity-0', 'pointer-events-none');
+                });
+            });
+            
+            // 初始化地图链接
+            initMapLinks();
         });
+        
+        // 初始化地图链接
+        function initMapLinks() {
+            // 为所有包含地址的元素添加地图链接
+            const allElements = document.querySelectorAll('.text-gray-500');
+            allElements.forEach(element => {
+                const text = element.textContent;
+                if (text.includes('地址：')) {
+                    const address = text.replace('地址：', '').trim();
+                    if (address && !element.querySelector('a')) {
+                        // 创建新的元素结构
+                        const newContent = document.createElement('span');
+                        newContent.className = 'inline-flex items-center';
+                        
+                        // 保留"地址："文本
+                        newContent.innerHTML = '地址：';
+                        
+                        // 创建可点击的地址链接
+                        const addressLink = document.createElement('a');
+                        addressLink.href = `https://apis.map.qq.com/uri/v1/marker?marker=coord:${getCoordinates(address)};title:${element.closest('.activity-card').querySelector('h3').textContent};addr:${address}`;
+                        addressLink.target = '_blank';
+                        addressLink.className = 'text-secondary hover:text-secondary-dark underline ml-1 flex items-center';
+                        addressLink.textContent = address;
+                        
+                        // 添加地图图标
+                        const mapIcon = document.createElement('i');
+                        mapIcon.className = 'fa fa-map-marker ml-2';
+                        addressLink.appendChild(mapIcon);
+                        
+                        // 组合新内容
+                        newContent.appendChild(addressLink);
+                        
+                        // 清空原元素内容并添加新内容
+                        element.innerHTML = '';
+                        element.appendChild(newContent);
+                    }
+                }
+            });
+        }
+        
+        // 模拟获取坐标（实际应用中应该使用地图API获取真实坐标）
+        function getCoordinates(address) {
+            // 这里使用模拟数据，实际应用中应该调用地图API获取真实坐标
+            const coordinates = {
+                '广州市白云区人和镇鹤龙六路189号': '23.394788,113.322165',
+                '广州市越秀区朝天路14号': '23.129163,113.264435',
+                '佛山市顺德区大良街道欢乐大道1号': '22.808942,113.249573',
+                '顺德区大良街道金榜上街19号': '22.806847,113.254312',
+                '顺德区大良街道金榜上街21号': '22.806747,113.254412',
+                '顺德区大良街道延年路延年食街': '22.807847,113.256312',
+                '顺德区大良街道清晖路25号香云纱园林酒店内': '22.806847,113.254312',
+                '顺德区大良街道清晖路23号': '22.806847,113.254312',
+                '顺德区大良街道广昌路1号': '22.806847,113.254312',
+                '顺德区大良街道昌泰路昌泰楼1号铺': '22.806847,113.254312',
+                '顺德区大良街道南国东路与驹荣南路交汇处': '22.806847,113.254312',
+                '顺德区大良街道欢乐大道华侨城欢乐海岸内': '22.808942,113.249573',
+                '顺德区容桂街道容奇大道中28号': '22.786847,113.284312',
+                '顺德区容桂街道文海西路16号': '22.786847,113.284312'
+            };
+            
+            return coordinates[address] || '22.806847,113.254312'; // 默认坐标
+        }
     </script>
 </body>
-  </html>
+</html>
