@@ -633,7 +633,14 @@
         document.getElementById('date').value = today;
 
         document.addEventListener('DOMContentLoaded', async function() {
+            // 新增：打印初始化日志，确认执行顺序
+            console.log('===== 页面初始化开始 =====');
+            console.log('当前SERVER_URL:', SERVER_URL);
+            
+            // 强制等待服务器数据加载完成
             await loadExpensesFromServer();
+            console.log('服务器数据加载完成，当前expenses:', expenses);
+            
             initTabs();
             initForms();
             initFilters();
@@ -641,48 +648,61 @@
             initOtherFunctions();
             updateSummary();
             updateAnalysis();
+            
+            console.log('===== 页面初始化完成 =====');
         });
 
-   async function loadExpensesFromServer() {
-    try {
-        // 1. 加随机参数，彻底避开所有缓存
-        const url = `${SERVER_URL}?t=${Date.now()}`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Expires': '0',
-                'Accept': 'application/json'
-            },
-            mode: 'cors'
-        });
+        // 核心修复：增强版loadExpensesFromServer，添加详细日志和容错
+        async function loadExpensesFromServer() {
+            try {
+                console.log('开始请求服务器数据...');
+                // 1. 加随机参数，彻底避开所有缓存
+                const url = `${SERVER_URL}?t=${Date.now()}`;
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors'
+                });
 
-        // 2. 先读文本，再解析，避免直接JSON.parse报错
-        const rawText = await response.text();
-        console.log('服务器返回：', rawText);
+                // 打印响应状态，排查连接问题
+                console.log('服务器响应状态码:', response.status);
+                console.log('服务器响应状态文本:', response.statusText);
+                
+                // 2. 先读文本，再解析，避免直接JSON.parse报错
+                const rawText = await response.text();
+                console.log('服务器返回原始内容:', rawText);
 
-        let serverData = [];
-        if (rawText.trim().startsWith('[')) {
-            serverData = JSON.parse(rawText);
-        } else {
-            throw new Error('返回的不是JSON数组');
+                let serverData = [];
+                if (rawText.trim().startsWith('[')) {
+                    serverData = JSON.parse(rawText);
+                    console.log('服务器数据解析成功:', serverData);
+                } else {
+                    throw new Error('返回的不是JSON数组，内容开头：' + rawText.substring(0, 50));
+                }
+
+                // 3. 强制用服务器数据覆盖本地
+                expenses = Array.isArray(serverData) ? serverData : [];
+                localStorage.setItem('travelExpenses', JSON.stringify(expenses)); // 同步到本地
+                showToast('✅ 已加载云服务器最新数据');
+            } catch (err) {
+                console.error('服务器加载失败详情：', err);
+                // 兜底：如果服务器真的连不上，再用本地数据
+                expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
+                showToast('⚠️ 服务器加载失败，使用本地数据', 'error');
+            }
         }
 
-        // 3. 强制用服务器数据覆盖本地
-        expenses = Array.isArray(serverData) ? serverData : [];
-        localStorage.setItem('travelExpenses', JSON.stringify(expenses)); // 同步到本地
-        showToast('✅ 已加载云服务器最新数据');
-    } catch (err) {
-        console.error('服务器加载失败：', err);
-        // 兜底：如果服务器真的连不上，再用本地数据
-        expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
-        showToast('⚠️ 服务器加载失败，使用本地数据', 'error');
-    }
-}
+        // 修复saveExpensesToServer：添加日志，兼容非JSON返回
         async function saveExpensesToServer() {
             try {
                 localStorage.setItem('travelExpenses', JSON.stringify(expenses));
+                console.log('开始保存数据到服务器，数据长度:', expenses.length);
+                
                 const response = await fetch(SERVER_URL, {
                     method: 'POST',
                     headers: {
@@ -690,15 +710,21 @@
                     },
                     body: JSON.stringify(expenses)
                 });
-                const result = await response.json();
+                
+                console.log('保存数据响应状态:', response.status);
+                const result = await response.text(); // 先读文本，避免JSON解析报错
+                console.log('保存数据返回内容:', result);
+                
                 if (response.ok) {
+                    showToast('✅ 数据已同步到云服务器');
                     return true;
                 } else {
-                    showToast('同步失败：' + result.error, 'error');
+                    showToast('同步失败：服务器返回错误', 'error');
                     return false;
                 }
             } catch (err) {
-                showToast('同步失败：网络错误', 'error');
+                console.error('保存数据失败:', err);
+                showToast('同步失败：' + err.message, 'error');
                 return false;
             }
         }
@@ -1026,6 +1052,8 @@
             
             if (type === 'error') {
                 toastIcon.className = 'fa fa-exclamation-circle text-red-500 mr-2';
+            } else if (type === 'info') {
+                toastIcon.className = 'fa fa-info-circle text-blue-500 mr-2';
             } else {
                 toastIcon.className = 'fa fa-check-circle text-green-500 mr-2';
             }
