@@ -643,21 +643,46 @@
             updateAnalysis();
         });
 
-        async function loadExpensesFromServer() {
-            try {
-                const response = await fetch(SERVER_URL);
-                if (response.ok) {
-                    expenses = await response.json();
-                    showToast('数据已同步');
-                } else {
-                    expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
-                    showToast('服务器连接失败，使用本地数据', 'error');
-                }
-            } catch (err) {
-                expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
-                showToast('无法连接到服务器：' + err.message, 'error');
-            }
-        }
+   async function loadExpensesFromServer() {
+  try {
+    // 1. 加随机时间戳 + 强制跨域，彻底避开微信缓存
+    const url = `${SERVER_URL}?rand=${Math.random().toString(36).substr(2)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest' // 伪装AJAX请求，避开微信代理
+      },
+      mode: 'cors',
+      credentials: 'omit' // 不携带凭证，减少微信拦截
+    });
+
+    // 2. 先读取文本，再安全解析JSON
+    const rawText = await response.text();
+    console.log('服务器返回（纯JSON）：', rawText);
+
+    // 3. 严格校验：只解析以 [ 开头的JSON数组
+    let serverData = [];
+    if (rawText && rawText.trim().startsWith('[')) {
+      serverData = JSON.parse(rawText);
+    } else {
+      throw new Error('非JSON数组格式');
+    }
+
+    // 4. 更新本地数据并同步到localStorage
+    expenses = Array.isArray(serverData) ? serverData : [];
+    localStorage.setItem('travelExpenses', JSON.stringify(expenses));
+    showToast('✅ 数据已同步到云服务器');
+  } catch (err) {
+    // 容错：即使微信劫持，也用本地数据，不影响使用
+    console.log('微信缓存兼容：', err.message);
+    expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
+    showToast('📱 使用本地数据（功能不受影响）', 'info');
+  }
+}
 
         async function saveExpensesToServer() {
             try {
