@@ -2,26 +2,21 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>旅行记账助手</title>
     <!-- 微信/社交分享 OG 元标签 - 新增内容开始 -->
     <meta property="og:title" content="旅行记账助手 - 轻松记录旅行开销，公平结算" />
     <meta property="og:description" content="专为旅行设计的记账工具，支持多人费用记录、自动结算、数据分析，让旅行记账更简单！" />
     <meta property="og:type" content="website" />
-    <!-- 使用600x300的大图，适配微信大卡片展示 -->
     <meta property="og:image" content="https://raw.githubusercontent.com/littleosu/littleosu.github.io/refs/heads/main/acount-600300.jpeg" />
     <meta property="og:image:width" content="600" />
     <meta property="og:image:height" content="300" />
-    <!-- 这里替换为你实际的网页访问地址，如果暂时没有可以先保留示例格式 -->
     <meta property="og:url" content="https://littleosu.github.io/travel-expense.html" />
     <meta property="og:site_name" content="旅行记账助手" />
-
-    <!-- 微信公众号专用标签（增强微信分享效果） -->
     <meta name="wechat:card" content="summary_large_image" />
     <meta name="wechat:title" content="旅行记账助手 - 轻松记录旅行开销，公平结算" />
     <meta name="wechat:description" content="专为旅行设计的记账工具，支持多人费用记录、自动结算、数据分析，让旅行记账更简单！" />
     <meta name="wechat:image" content="https://raw.githubusercontent.com/littleosu/littleosu.github.io/refs/heads/main/acount-600300.jpeg" />
-    <!-- 备用小图（可选，用于小卡片展示） -->
     <meta name="wechat:image_small" content="https://raw.githubusercontent.com/littleosu/littleosu.github.io/a2dd0562390758addd7216d7a60fd419feaf32a6/acount-300300.jpeg" />
     <!-- 微信/社交分享 OG 元标签 - 新增内容结束 -->
     <!-- Tailwind CSS v3 -->
@@ -36,9 +31,9 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#3b82f6', // 蓝色
-                        secondary: '#10b981', // 绿色
-                        accent: '#f59e0b', // 橙色
+                        primary: '#3b82f6',
+                        secondary: '#10b981',
+                        accent: '#f59e0b',
                         light: '#f3f4f6',
                         dark: '#1f2937'
                     },
@@ -79,13 +74,15 @@
             }
         }
         
-        /* 自定义样式 */
         body {
             background-color: #f0f9ff;
             background-image: 
                 radial-gradient(at 80% 0%, rgba(59, 130, 246, 0.1) 0px, transparent 50%),
                 radial-gradient(at 0% 50%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
             background-attachment: fixed;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         .tab-content {
@@ -99,20 +96,16 @@
         
         .nav-item {
             transition: all 0.3s ease;
-            cursor: pointer; /* 新增：明确点击指针 */
-            -webkit-tap-highlight-color: transparent; /* 新增：去掉微信高亮 */
-            -webkit-user-select: none; /* 新增：禁止文本选择 */
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-user-select: none;
             user-select: none;
         }
-        /* 新增：底部导航栏整体样式优化 */
-            nav.fixed.bottom-0 {
+        
+        nav.fixed.bottom-0 {
             -webkit-tap-highlight-color: transparent;
         }
 
-        .nav-item.active {
-            color: #3b82f6;
-            border-bottom: 2px solid #3b82f6;
-        }
         .nav-item.active {
             color: #3b82f6;
             border-bottom: 2px solid #3b82f6;
@@ -412,7 +405,6 @@
                         结算建议
                     </h3>
                     <div id="settlementSuggestion" class="p-4 bg-white rounded-lg shadow-sm">
-                        <!-- 结算建议内容将通过JS动态生成 -->
                     </div>
                 </div>
                 
@@ -436,7 +428,6 @@
                     </div>
                     
                     <div id="expenseList" class="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-                        <!-- 费用列表将通过JS动态生成 -->
                         <div class="text-center text-gray-500 py-8">
                             <i class="fa fa-clipboard text-4xl mb-3"></i>
                             <p>暂无费用记录</p>
@@ -470,7 +461,6 @@
                 <div class="card">
                     <h3 class="text-lg font-bold mb-4">分类详情</h3>
                     <div id="categoryDetails" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- 分类详情将通过JS动态生成 -->
                     </div>
                 </div>
                 
@@ -563,7 +553,6 @@
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">费用类型</label>
                     <div id="filterCategories" class="grid grid-cols-2 gap-2">
-                        <!-- 分类筛选将通过JS动态生成 -->
                     </div>
                 </div>
                 <div>
@@ -628,10 +617,7 @@
     </div>
 
     <script>
-        // 云电脑数据服务器地址（已填好你的公网IP）
         const SERVER_URL = 'http://115.190.2.90:3000/api/expenses';
-
-        // 全局变量
         let expenses = [];
         let currentEditId = null;
         let filters = {
@@ -640,37 +626,23 @@
             minAmount: null,
             maxAmount: null
         };
-
-        // 图表实例缓存
         let categoryChartInstance = null;
         let dailyChartInstance = null;
         let payerChartInstance = null;
-
-        // 设置当前日期为默认值
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('date').value = today;
 
-        // 页面加载完成后初始化
         document.addEventListener('DOMContentLoaded', async function() {
-            // 第一步：从云服务器加载数据
             await loadExpensesFromServer();
-            
-            // 初始化其他功能
             initTabs();
             initForms();
             initFilters();
             initEditModal();
             initOtherFunctions();
-            
-            // 更新页面显示
             updateSummary();
             updateAnalysis();
         });
 
-        // --------------------------
-        // 核心：云服务器数据读写函数
-        // --------------------------
-        // 从云服务器加载数据
         async function loadExpensesFromServer() {
             try {
                 const response = await fetch(SERVER_URL);
@@ -678,24 +650,18 @@
                     expenses = await response.json();
                     showToast('数据已同步');
                 } else {
-                    // 失败时读取本地备份
                     expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
                     showToast('服务器连接失败，使用本地数据', 'error');
                 }
             } catch (err) {
-                // 网络错误时读取本地备份
                 expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
                 showToast('无法连接到服务器：' + err.message, 'error');
             }
         }
 
-        // 保存数据到云服务器
         async function saveExpensesToServer() {
             try {
-                // 先备份到本地（防止服务器故障）
                 localStorage.setItem('travelExpenses', JSON.stringify(expenses));
-                
-                // 发送数据到云服务器
                 const response = await fetch(SERVER_URL, {
                     method: 'POST',
                     headers: {
@@ -703,7 +669,6 @@
                     },
                     body: JSON.stringify(expenses)
                 });
-                
                 const result = await response.json();
                 if (response.ok) {
                     return true;
@@ -717,59 +682,45 @@
             }
         }
 
-        // --------------------------
-        // 原有功能函数（无需修改）
-        // --------------------------
-        // 初始化标签页切换
-        // 初始化标签页切换（修复微信浏览器兼容问题）
-function initTabs() {
-    const navItems = document.querySelectorAll('.nav-item');
-    const tabContents = document.querySelectorAll('.tab-content');
-    
-    navItems.forEach(item => {
-        // 同时绑定touchstart和click事件，解决微信浏览器点击无响应问题
-        item.addEventListener('touchstart', handleTabClick);
-        item.addEventListener('click', handleTabClick);
-        
-        // 阻止事件冒泡和默认行为，避免微信浏览器的默认处理
-        item.addEventListener('touchmove', function(e) {
-            e.preventDefault();
-        }, { passive: false });
-    });
+        function initTabs() {
+            const navItems = document.querySelectorAll('.nav-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            navItems.forEach(item => {
+                item.addEventListener('touchstart', handleTabClick, { passive: false });
+                item.addEventListener('click', handleTabClick);
+                
+                item.addEventListener('touchmove', function(e) {
+                    e.preventDefault();
+                }, { passive: false });
+            });
 
-    // 单独的事件处理函数，避免重复代码
-    function handleTabClick(e) {
-        // 阻止默认行为和冒泡
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const tabId = this.getAttribute('data-tab');
-        
-        // 更新导航项状态
-        navItems.forEach(nav => nav.classList.remove('active'));
-        this.classList.add('active');
-        
-        // 更新标签内容显示
-        tabContents.forEach(content => {
-            content.classList.remove('active');
-            if (content.id === tabId) {
-                content.classList.add('active');
-                if (tabId === 'expense-analysis') {
-                    updateCharts();
-                }
+            function handleTabClick(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const tabId = this.getAttribute('data-tab');
+                
+                navItems.forEach(nav => nav.classList.remove('active'));
+                this.classList.add('active');
+                
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                    if (content.id === tabId) {
+                        content.classList.add('active');
+                        if (tabId === 'expense-analysis') {
+                            updateCharts();
+                        }
+                    }
+                });
             }
-        });
-    }
-}
+        }
 
-        // 初始化表单提交
         function initForms() {
-            // 添加费用表单
             const expenseForm = document.getElementById('expenseForm');
             expenseForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
-                // 获取表单数据
                 let category = document.querySelector('input[name="category"]:checked').value;
                 if (category === '自定义') {
                     category = document.getElementById('customCategory').value || '其他';
@@ -780,7 +731,6 @@ function initTabs() {
                 const amount = parseFloat(document.getElementById('amount').value);
                 const date = document.getElementById('date').value;
                 
-                // 验证表单
                 if (!description) {
                     showToast('请输入费用描述', 'error');
                     return;
@@ -791,7 +741,6 @@ function initTabs() {
                     return;
                 }
                 
-                // 创建费用对象
                 const expense = {
                     id: Date.now().toString(),
                     category,
@@ -802,27 +751,19 @@ function initTabs() {
                     createdAt: new Date().toISOString()
                 };
                 
-                // 添加到数组
                 expenses.push(expense);
-                
-                // 保存到云服务器
                 await saveExpensesToServer();
-                
-                // 更新显示
                 updateSummary();
                 updateAnalysis();
                 
-                // 重置表单
                 expenseForm.reset();
                 document.getElementById('date').value = today;
                 document.querySelector('input[name="category"][value="餐饮"]').checked = true;
                 document.querySelector('input[name="payer"][value="肖瑶"]').checked = true;
                 
-                // 显示成功提示
                 showToast('费用添加成功');
             });
             
-            // 自定义分类显示/隐藏
             const categoryCustom = document.getElementById('category-custom');
             const customCategoryContainer = document.getElementById('customCategoryContainer');
             
@@ -839,7 +780,6 @@ function initTabs() {
             });
         }
 
-        // 初始化筛选功能
         function initFilters() {
             const filterExpensesBtn = document.getElementById('filterExpenses');
             const filterModal = document.getElementById('filterModal');
@@ -848,25 +788,21 @@ function initTabs() {
             const resetFilterBtn = document.getElementById('resetFilter');
             const filterPayerAll = document.getElementById('filter-payer-all');
             
-            // 打开筛选弹窗
             filterExpensesBtn.addEventListener('click', function() {
                 populateCategoryFilters();
                 filterModal.classList.remove('hidden');
             });
             
-            // 关闭筛选弹窗（兼容微信浏览器）
-           closeFilterBtn.addEventListener('touchstart', function(e) {
-               e.preventDefault();
-               filterModal.classList.add('hidden');
+            closeFilterBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                filterModal.classList.add('hidden');
             });
-           closeFilterBtn.addEventListener('click', function(e) {
-               e.preventDefault();
-               filterModal.classList.add('hidden');
+            closeFilterBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                filterModal.classList.add('hidden');
             });
             
-            // 应用筛选
             applyFilterBtn.addEventListener('click', function() {
-                // 获取付款人筛选
                 const payerA = document.getElementById('filter-payer-a').checked;
                 const payerB = document.getElementById('filter-payer-b').checked;
                 
@@ -874,26 +810,22 @@ function initTabs() {
                 if (payerA) filters.payers.push('肖瑶');
                 if (payerB) filters.payers.push('樊宁馨');
                 
-                // 获取分类筛选
                 filters.categories = [];
                 document.querySelectorAll('#filterCategories input[type="checkbox"]:checked').forEach(checkbox => {
                     filters.categories.push(checkbox.value);
                 });
                 
-                // 获取金额范围筛选
                 const minAmount = document.getElementById('filter-min-amount').value;
                 const maxAmount = document.getElementById('filter-max-amount').value;
                 
                 filters.minAmount = minAmount ? parseFloat(minAmount) : null;
                 filters.maxAmount = maxAmount ? parseFloat(maxAmount) : null;
                 
-                // 应用筛选并更新显示
                 updateExpenseList();
                 filterModal.classList.add('hidden');
                 showToast('筛选已应用');
             });
             
-            // 重置筛选
             resetFilterBtn.addEventListener('click', function() {
                 document.getElementById('filter-payer-all').checked = true;
                 document.getElementById('filter-payer-a').checked = true;
@@ -906,14 +838,12 @@ function initTabs() {
                 });
             });
             
-            // 全选/取消全选付款人
             filterPayerAll.addEventListener('change', function() {
                 const checked = this.checked;
                 document.getElementById('filter-payer-a').checked = checked;
                 document.getElementById('filter-payer-b').checked = checked;
             });
             
-            // 点击模态框背景关闭
             filterModal.addEventListener('click', function(e) {
                 if (e.target === this) {
                     this.classList.add('hidden');
@@ -921,15 +851,12 @@ function initTabs() {
             });
         }
 
-        // 填充分类筛选选项
         function populateCategoryFilters() {
             const filterCategories = document.getElementById('filterCategories');
             filterCategories.innerHTML = '';
             
-            // 获取所有唯一的分类
             const categories = [...new Set(expenses.map(expense => expense.category))];
             
-            // 添加全选选项
             const allDiv = document.createElement('div');
             allDiv.className = 'col-span-2';
             allDiv.innerHTML = `
@@ -940,7 +867,6 @@ function initTabs() {
             `;
             filterCategories.appendChild(allDiv);
             
-            // 添加分类选项
             categories.forEach(category => {
                 const div = document.createElement('div');
                 div.innerHTML = `
@@ -952,7 +878,6 @@ function initTabs() {
                 filterCategories.appendChild(div);
             });
             
-            // 添加全选/取消全选事件
             document.getElementById('filter-category-all').addEventListener('change', function() {
                 const checked = this.checked;
                 document.querySelectorAll('.filter-category').forEach(checkbox => {
@@ -961,13 +886,12 @@ function initTabs() {
             });
         }
 
-        // 初始化编辑功能
         function initEditModal() {
             const editModal = document.getElementById('editModal');
             const closeEditBtn = document.getElementById('closeEdit');
             const editForm = document.getElementById('editForm');
             const deleteExpenseBtn = document.getElementById('deleteExpense');
-            // 关闭编辑弹窗（兼容微信浏览器）
+            
             closeEditBtn.addEventListener('touchstart', function(e) {
                 e.preventDefault();
                 editModal.classList.add('hidden');
@@ -977,7 +901,6 @@ function initTabs() {
                 editModal.classList.add('hidden');
             });
             
-            // 提交编辑表单
             editForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
                 
@@ -987,7 +910,6 @@ function initTabs() {
                 const amount = parseFloat(document.getElementById('edit-amount').value);
                 const date = document.getElementById('edit-date').value;
                 
-                // 验证表单
                 if (!description) {
                     showToast('请输入费用描述', 'error');
                     return;
@@ -998,7 +920,6 @@ function initTabs() {
                     return;
                 }
                 
-                // 更新费用
                 const index = expenses.findIndex(expense => expense.id === id);
                 if (index !== -1) {
                     expenses[index].payer = payer;
@@ -1006,39 +927,29 @@ function initTabs() {
                     expenses[index].amount = amount;
                     expenses[index].date = date;
                     
-                    // 保存到云服务器
                     await saveExpensesToServer();
-                    
-                    // 更新显示
                     updateSummary();
                     updateAnalysis();
                     
-                    // 关闭弹窗
                     editModal.classList.add('hidden');
                     showToast('费用已更新');
                 }
             });
             
-            // 删除费用
             deleteExpenseBtn.addEventListener('click', async function() {
                 if (confirm('确定要删除这条费用记录吗？')) {
                     const id = document.getElementById('edit-id').value;
                     expenses = expenses.filter(expense => expense.id !== id);
                     
-                    // 保存到云服务器
                     await saveExpensesToServer();
-                    
-                    // 更新显示
                     updateSummary();
                     updateAnalysis();
                     
-                    // 关闭弹窗
                     editModal.classList.add('hidden');
                     showToast('费用已删除');
                 }
             });
             
-            // 点击模态框背景关闭
             editModal.addEventListener('click', function(e) {
                 if (e.target === this) {
                     this.classList.add('hidden');
@@ -1046,34 +957,27 @@ function initTabs() {
             });
         }
 
-        // 初始化其他功能
         function initOtherFunctions() {
-            // 排序功能
             document.getElementById('sortExpenses').addEventListener('change', function() {
                 updateExpenseList();
             });
             
-            // 重置数据
             document.getElementById('resetData').addEventListener('click', async function() {
                 if (confirm('确定要重置所有数据吗？此操作不可恢复。')) {
                     expenses = [];
-                    // 保存到云服务器
                     await saveExpensesToServer();
-                    // 更新显示
                     updateSummary();
                     updateAnalysis();
                     showToast('数据已重置');
                 }
             });
             
-            // 导出数据
             document.getElementById('exportData').addEventListener('click', function() {
                 if (expenses.length === 0) {
                     showToast('没有数据可导出', 'error');
                     return;
                 }
                 
-                // 创建CSV内容
                 let csvContent = "data:text/csv;charset=utf-8,";
                 csvContent += "日期,类型,付款人,描述,金额\n";
                 
@@ -1081,14 +985,12 @@ function initTabs() {
                     csvContent += `${expense.date},${expense.category},${expense.payer},${expense.description},${expense.amount}\n`;
                 });
                 
-                // 创建下载链接
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
                 link.setAttribute("href", encodedUri);
                 link.setAttribute("download", `旅行记账_${today}.csv`);
                 document.body.appendChild(link);
                 
-                // 触发下载
                 link.click();
                 document.body.removeChild(link);
                 
@@ -1096,50 +998,36 @@ function initTabs() {
             });
         }
 
-        // 显示提示弹窗
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             const toastIcon = document.getElementById('toastIcon');
             const toastMessage = document.getElementById('toastMessage');
             
-            // 设置提示类型
             if (type === 'error') {
                 toastIcon.className = 'fa fa-exclamation-circle text-red-500 mr-2';
             } else {
                 toastIcon.className = 'fa fa-check-circle text-green-500 mr-2';
             }
             
-            // 设置提示消息
             toastMessage.textContent = message;
-            
-            // 显示提示
             toast.classList.remove('translate-x-full');
             
-            // 3秒后隐藏
             setTimeout(() => {
                 toast.classList.add('translate-x-full');
             }, 3000);
         }
 
-        // 更新汇总页面
         function updateSummary() {
-            // 计算总金额
             const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
-            
-            // 计算每个用户的支出
             const userAAmount = expenses.reduce((sum, expense) => expense.payer === '肖瑶' ? sum + expense.amount : sum, 0);
             const userBAmount = totalAmount - userAAmount;
-            
-            // 计算平均金额
             const averageAmount = totalAmount / 2;
             
-            // 更新总览卡片
             document.getElementById('totalAmount').textContent = totalAmount.toFixed(2);
             document.getElementById('averageAmount').textContent = averageAmount.toFixed(2);
             document.getElementById('userAAmount').textContent = userAAmount.toFixed(2);
             document.getElementById('userBAmount').textContent = userBAmount.toFixed(2);
             
-            // 更新进度条
             const userARatio = totalAmount > 0 ? (userAAmount / totalAmount) * 100 : 0;
             const userBRatio = totalAmount > 0 ? (userBAmount / totalAmount) * 100 : 0;
             
@@ -1148,21 +1036,16 @@ function initTabs() {
             document.getElementById('userARatio').textContent = `${userARatio.toFixed(1)}%`;
             document.getElementById('userBRatio').textContent = `${userBRatio.toFixed(1)}%`;
             
-            // 更新结算建议
             updateSettlementSuggestion(userAAmount, userBAmount, averageAmount);
-            
-            // 更新费用列表
             updateExpenseList();
         }
 
-        // 更新结算建议
         function updateSettlementSuggestion(userAAmount, userBAmount, averageAmount) {
             const settlementCard = document.getElementById('settlementCard');
             const settlementSuggestion = document.getElementById('settlementSuggestion');
             const balanceStatus = document.getElementById('balanceStatus');
             const balanceIcon = document.getElementById('balanceIcon');
             
-            // 如果没有费用记录，隐藏结算卡片
             if (expenses.length === 0) {
                 settlementCard.classList.add('hidden');
                 balanceStatus.textContent = '待结算';
@@ -1171,15 +1054,10 @@ function initTabs() {
                 return;
             }
             
-            // 计算差额
+            settlementCard.classList.remove('hidden');
             const diffA = userAAmount - averageAmount;
             
-            // 显示结算卡片
-            settlementCard.classList.remove('hidden');
-            
-            // 更新结算建议
             if (Math.abs(diffA) < 0.01) {
-                // 金额相等
                 settlementSuggestion.innerHTML = `
                     <div class="text-center py-2">
                         <i class="fa fa-check-circle text-green-500 text-3xl mb-2"></i>
@@ -1191,7 +1069,6 @@ function initTabs() {
                 balanceStatus.className = 'text-lg font-medium text-green-600';
                 balanceIcon.className = 'fa fa-check-circle ml-2 text-green-500';
             } else if (diffA > 0) {
-                // 肖瑶支出更多
                 const amountToPay = diffA.toFixed(2);
                 settlementSuggestion.innerHTML = `
                     <div class="text-center py-2">
@@ -1205,7 +1082,6 @@ function initTabs() {
                 balanceStatus.className = 'text-lg font-medium text-blue-600';
                 balanceIcon.className = 'fa fa-arrow-right ml-2 text-blue-500';
             } else {
-                // 樊宁馨支出更多
                 const amountToPay = Math.abs(diffA).toFixed(2);
                 settlementSuggestion.innerHTML = `
                     <div class="text-center py-2">
@@ -1221,25 +1097,20 @@ function initTabs() {
             }
         }
 
-        // 更新费用列表
         function updateExpenseList() {
             const expenseList = document.getElementById('expenseList');
             const sortBy = document.getElementById('sortExpenses').value;
             
-            // 应用筛选
             let filteredExpenses = [...expenses];
             
-            // 付款人筛选
             if (filters.payers.length > 0) {
                 filteredExpenses = filteredExpenses.filter(expense => filters.payers.includes(expense.payer));
             }
             
-            // 分类筛选
             if (filters.categories.length > 0) {
                 filteredExpenses = filteredExpenses.filter(expense => filters.categories.includes(expense.category));
             }
             
-            // 金额范围筛选
             if (filters.minAmount !== null) {
                 filteredExpenses = filteredExpenses.filter(expense => expense.amount >= filters.minAmount);
             }
@@ -1247,7 +1118,6 @@ function initTabs() {
                 filteredExpenses = filteredExpenses.filter(expense => expense.amount <= filters.maxAmount);
             }
             
-            // 排序
             switch (sortBy) {
                 case 'date-desc':
                     filteredExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -1269,7 +1139,6 @@ function initTabs() {
                     break;
             }
             
-            // 更新列表显示
             if (filteredExpenses.length === 0) {
                 expenseList.innerHTML = `
                     <div class="text-center text-gray-500 py-8">
@@ -1281,10 +1150,8 @@ function initTabs() {
                 return;
             }
             
-            // 生成费用列表HTML
             let html = '';
             filteredExpenses.forEach(expense => {
-                // 获取分类对应的徽章样式
                 let badgeClass = 'badge-blue';
                 switch (expense.category) {
                     case '餐饮': badgeClass = 'badge-orange'; break;
@@ -1297,7 +1164,6 @@ function initTabs() {
                     default: badgeClass = 'badge-green';
                 }
                 
-                // 获取付款人样式
                 let payerClass = 'bg-blue-100 text-primary';
                 let payerInitial = 'X';
                 if (expense.payer === '樊宁馨') {
@@ -1329,7 +1195,6 @@ function initTabs() {
             
             expenseList.innerHTML = html;
             
-            // 添加编辑事件监听
             document.querySelectorAll('.edit-expense').forEach(btn => {
                 btn.addEventListener('click', function() {
                     const id = this.getAttribute('data-id');
@@ -1342,40 +1207,32 @@ function initTabs() {
                         document.getElementById('edit-amount').value = expense.amount;
                         document.getElementById('edit-date').value = expense.date;
                         
-                        // 显示编辑弹窗
                         document.getElementById('editModal').classList.remove('hidden');
                     }
                 });
             });
         }
 
-        // 更新分析页面
         function updateAnalysis() {
-            // 计算基本统计数据
             const totalTransactions = expenses.length;
             const totalAmount = expenses.reduce((sum, expense) => sum + expense.amount, 0);
             const maxTransaction = expenses.length > 0 ? Math.max(...expenses.map(exp => exp.amount)) : 0;
             const avgTransaction = totalTransactions > 0 ? totalAmount / totalTransactions : 0;
             
-            // 更新统计卡片
             document.getElementById('totalTransactions').textContent = totalTransactions;
             document.getElementById('maxTransaction').textContent = maxTransaction.toFixed(2);
             document.getElementById('avgTransaction').textContent = avgTransaction.toFixed(2);
             
-            // 更新分类详情
             updateCategoryDetails();
             
-            // 如果当前在分析页面，更新图表
             if (document.getElementById('expense-analysis').classList.contains('active')) {
                 updateCharts();
             }
         }
 
-        // 更新分类详情
         function updateCategoryDetails() {
             const categoryDetails = document.getElementById('categoryDetails');
             
-            // 按分类汇总
             const categorySummary = {};
             expenses.forEach(expense => {
                 if (!categorySummary[expense.category]) {
@@ -1389,12 +1246,10 @@ function initTabs() {
                 categorySummary[expense.category].total += expense.amount;
             });
             
-            // 计算平均值
             Object.keys(categorySummary).forEach(category => {
                 categorySummary[category].avg = categorySummary[category].total / categorySummary[category].count;
             });
             
-            // 生成HTML
             let html = '';
             if (Object.keys(categorySummary).length === 0) {
                 html = `
@@ -1437,14 +1292,11 @@ function initTabs() {
             categoryDetails.innerHTML = html;
         }
 
-        // 更新图表
         function updateCharts() {
-            // 销毁旧图表
             if (categoryChartInstance) categoryChartInstance.destroy();
             if (dailyChartInstance) dailyChartInstance.destroy();
             if (payerChartInstance) payerChartInstance.destroy();
             
-            // 1. 分类占比图表
             const categoryCtx = document.getElementById('categoryChart').getContext('2d');
             const categoryData = {};
             
@@ -1458,14 +1310,14 @@ function initTabs() {
             const categoryLabels = Object.keys(categoryData);
             const categoryValues = Object.values(categoryData);
             const categoryColors = [
-                '#f97316', // 橙色 - 餐饮
-                '#3b82f6', // 蓝色 - 交通
-                '#8b5cf6', // 紫色 - 住宿
-                '#ec4899', // 粉色 - 购物
-                '#ef4444', // 红色 - 娱乐
-                '#eab308', // 黄色 - 门票
-                '#6b7280', // 灰色 - 其他
-                '#10b981', // 绿色 - 自定义
+                '#f97316',
+                '#3b82f6',
+                '#8b5cf6',
+                '#ec4899',
+                '#ef4444',
+                '#eab308',
+                '#6b7280',
+                '#10b981',
             ];
             
             categoryChartInstance = new Chart(categoryCtx, {
@@ -1489,7 +1341,6 @@ function initTabs() {
                 }
             });
             
-            // 2. 日支出趋势图表
             const dailyCtx = document.getElementById('dailyChart').getContext('2d');
             const dailyData = {};
             
@@ -1500,7 +1351,6 @@ function initTabs() {
                 dailyData[expense.date] += expense.amount;
             });
             
-            // 按日期排序
             const sortedDates = Object.keys(dailyData).sort((a, b) => new Date(a) - new Date(b));
             const dailyValues = sortedDates.map(date => dailyData[date]);
             
@@ -1537,7 +1387,6 @@ function initTabs() {
                 }
             });
             
-            // 3. 付款人对比图表
             const payerCtx = document.getElementById('payerChart').getContext('2d');
             const userAAmount = expenses.reduce((sum, expense) => expense.payer === '肖瑶' ? sum + expense.amount : sum, 0);
             const userBAmount = expenses.reduce((sum, expense) => expense.payer === '樊宁馨' ? sum + expense.amount : sum, 0);
