@@ -99,8 +99,20 @@
         
         .nav-item {
             transition: all 0.3s ease;
+            cursor: pointer; /* 新增：明确点击指针 */
+            -webkit-tap-highlight-color: transparent; /* 新增：去掉微信高亮 */
+            -webkit-user-select: none; /* 新增：禁止文本选择 */
+            user-select: none;
         }
-        
+        /* 新增：底部导航栏整体样式优化 */
+            nav.fixed.bottom-0 {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .nav-item.active {
+            color: #3b82f6;
+            border-bottom: 2px solid #3b82f6;
+        }
         .nav-item.active {
             color: #3b82f6;
             border-bottom: 2px solid #3b82f6;
@@ -709,31 +721,46 @@
         // 原有功能函数（无需修改）
         // --------------------------
         // 初始化标签页切换
-        function initTabs() {
-            const navItems = document.querySelectorAll('.nav-item');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            navItems.forEach(item => {
-                item.addEventListener('click', function() {
-                    const tabId = this.getAttribute('data-tab');
-                    
-                    // 更新导航项状态
-                    navItems.forEach(nav => nav.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // 更新标签内容显示
-                    tabContents.forEach(content => {
-                        content.classList.remove('active');
-                        if (content.id === tabId) {
-                            content.classList.add('active');
-                            if (tabId === 'expense-analysis') {
-                                updateCharts();
-                            }
-                        }
-                    });
-                });
-            });
-        }
+        // 初始化标签页切换（修复微信浏览器兼容问题）
+function initTabs() {
+    const navItems = document.querySelectorAll('.nav-item');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    navItems.forEach(item => {
+        // 同时绑定touchstart和click事件，解决微信浏览器点击无响应问题
+        item.addEventListener('touchstart', handleTabClick);
+        item.addEventListener('click', handleTabClick);
+        
+        // 阻止事件冒泡和默认行为，避免微信浏览器的默认处理
+        item.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+    });
+
+    // 单独的事件处理函数，避免重复代码
+    function handleTabClick(e) {
+        // 阻止默认行为和冒泡
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const tabId = this.getAttribute('data-tab');
+        
+        // 更新导航项状态
+        navItems.forEach(nav => nav.classList.remove('active'));
+        this.classList.add('active');
+        
+        // 更新标签内容显示
+        tabContents.forEach(content => {
+            content.classList.remove('active');
+            if (content.id === tabId) {
+                content.classList.add('active');
+                if (tabId === 'expense-analysis') {
+                    updateCharts();
+                }
+            }
+        });
+    }
+}
 
         // 初始化表单提交
         function initForms() {
@@ -827,9 +854,14 @@
                 filterModal.classList.remove('hidden');
             });
             
-            // 关闭筛选弹窗
-            closeFilterBtn.addEventListener('click', function() {
-                filterModal.classList.add('hidden');
+            // 关闭筛选弹窗（兼容微信浏览器）
+           closeFilterBtn.addEventListener('touchstart', function(e) {
+               e.preventDefault();
+               filterModal.classList.add('hidden');
+            });
+           closeFilterBtn.addEventListener('click', function(e) {
+               e.preventDefault();
+               filterModal.classList.add('hidden');
             });
             
             // 应用筛选
@@ -935,9 +967,13 @@
             const closeEditBtn = document.getElementById('closeEdit');
             const editForm = document.getElementById('editForm');
             const deleteExpenseBtn = document.getElementById('deleteExpense');
-            
-            // 关闭编辑弹窗
-            closeEditBtn.addEventListener('click', function() {
+            // 关闭编辑弹窗（兼容微信浏览器）
+            closeEditBtn.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                editModal.classList.add('hidden');
+            });
+            closeEditBtn.addEventListener('click', function(e) {
+                e.preventDefault();
                 editModal.classList.add('hidden');
             });
             
