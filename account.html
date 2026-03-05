@@ -643,9 +643,8 @@
             updateAnalysis();
         });
 
-   async function loadExpensesFromServer() {
+async function loadExpensesFromServer() {
     try {
-        // 1. 加随机参数，彻底避开所有缓存
         const url = `${SERVER_URL}?t=${Date.now()}`;
         const response = await fetch(url, {
             method: 'GET',
@@ -658,26 +657,27 @@
             mode: 'cors'
         });
 
-        // 2. 先读文本，再解析，避免直接JSON.parse报错
+        // 核心修复：先判断响应状态码是否正常
+        if (!response.ok) {
+            throw new Error(`服务器返回错误：${response.status} ${response.statusText}`);
+        }
+
         const rawText = await response.text();
         console.log('服务器返回：', rawText);
-
         let serverData = [];
         if (rawText.trim().startsWith('[')) {
             serverData = JSON.parse(rawText);
         } else {
             throw new Error('返回的不是JSON数组');
         }
-
-        // 3. 强制用服务器数据覆盖本地
         expenses = Array.isArray(serverData) ? serverData : [];
-        localStorage.setItem('travelExpenses', JSON.stringify(expenses)); // 同步到本地
+        localStorage.setItem('travelExpenses', JSON.stringify(expenses));
         showToast('✅ 已加载云服务器最新数据');
     } catch (err) {
         console.error('服务器加载失败：', err);
-        // 兜底：如果服务器真的连不上，再用本地数据
+        // 兜底：使用本地数据
         expenses = JSON.parse(localStorage.getItem('travelExpenses')) || [];
-        showToast('⚠️ 服务器加载失败，使用本地数据', 'error');
+        showToast(`⚠️ 服务器加载失败：${err.message}，使用本地数据`, 'error');
     }
 }
         async function saveExpensesToServer() {
