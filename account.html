@@ -646,15 +646,7 @@
 async function loadExpensesFromServer() {
     try {
         const url = `${SERVER_URL}?t=${Date.now()}`;
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Pragma': 'no-cache',
-                'Accept': 'application/json'
-            },
-            mode: 'cors'
-        });
+        const response = await fetch(url);
 
         // 核心修复：先判断响应状态码是否正常
         if (!response.ok) {
