@@ -2,22 +2,22 @@ name: Delete Auto Upload Screenshots
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
-  delete-screenshots:
+  delete-images:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Delete 已完结_ and 进行中_ png files
+      - name: 删除目标图片
         run: |
           rm -f 已完结_*.png
           rm -f 进行中_*.png
 
-      - name: Commit and push
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add -A
-          git commit -m "批量删除自动上传的已完结/进行中截图"
-          git push
+      - name: 提交更改
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "安全清理：仅删除自动上传截图"
