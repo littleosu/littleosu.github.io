@@ -5,10 +5,6 @@ on:
   schedule:
     - cron: '0 2 * * *'
 
-# 强制使用 Node.js 24，消除警告 ✅
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   clean-files:
     runs-on: ubuntu-latest
@@ -16,22 +12,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 删除根目录 PNG
+      # 删除 PNG
       - name: Delete PNG files
         run: |
           find . -maxdepth 1 -type f -name "*.png" -delete
           echo "✅ 已删除根目录所有 PNG 文件"
 
-      # 删除包含关键词的 PDF（你要的功能）
+      # 删除指定 PDF
       - name: Delete target PDF files
         run: |
           find . -maxdepth 1 -type f -name "*校外人员及车辆进校登记*.pdf" -delete
           echo "✅ 已删除根目录匹配关键词的 PDF 文件"
 
-      # 提交变更
-      - name: Commit and push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ github.head_ref || github.ref }}
-          message: "chore: 自动清理图片与PDF文件"
+      # 提交变更（修复版，无参数错误）
+      - name: Commit & Push changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "chore: 自动清理图片与PDF文件" || exit 0
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
