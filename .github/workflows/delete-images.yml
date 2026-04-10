@@ -1,28 +1,35 @@
-name: Delete Auto Upload Screenshots
-on:
-  workflow_dispatch:
+name: Delete Images and PDF
 
-permissions:
-  contents: write
+on:
+  workflow_dispatch:    # 手动触发
+  schedule:
+    - cron: '0 2 * * *' # 每天凌晨2点自动执行（UTC时间）
 
 jobs:
-  delete-images:
+  clean-files:
     runs-on: ubuntu-latest
-    env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # 直接消除警告
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: 删除目标图片
+      # 你原来的删除 PNG 功能
+      - name: Delete PNG files
         run: |
-          rm -f 已完结_*.png
-          rm -f 进行中_*.png
+          find . -maxdepth 1 -type f -name "*.png" -delete
+          echo "已删除根目录所有 PNG 文件"
 
-      - name: 提交并推送
+      # 新增：删除包含“校外人员及车辆进校登记”的 PDF
+      - name: Delete target PDF files
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "actions@github.com"
-          git add .
-          git commit -m "安全删除已完结/进行中截图"
-          git push
+          find . -maxdepth 1 -type f -name "*校外人员及车辆进校登记*.pdf" -delete
+          echo "已删除根目录匹配关键词的 PDF 文件"
+
+      # 提交并推送变更
+      - name: Commit and push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.head_ref || github.ref }}
+          message: "chore: 自动清理图片与PDF文件"
