@@ -1,9 +1,13 @@
 name: Delete Images and PDF
 
 on:
-  workflow_dispatch:    # 手动触发
+  workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *' # 每天凌晨2点自动执行（UTC时间）
+    - cron: '0 2 * * *'
+
+# 强制使用 Node.js 24，消除警告 ✅
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   clean-files:
@@ -11,22 +15,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # 你原来的删除 PNG 功能
+      # 删除根目录 PNG
       - name: Delete PNG files
         run: |
           find . -maxdepth 1 -type f -name "*.png" -delete
-          echo "已删除根目录所有 PNG 文件"
+          echo "✅ 已删除根目录所有 PNG 文件"
 
-      # 新增：删除包含“校外人员及车辆进校登记”的 PDF
+      # 删除包含关键词的 PDF（你要的功能）
       - name: Delete target PDF files
         run: |
           find . -maxdepth 1 -type f -name "*校外人员及车辆进校登记*.pdf" -delete
-          echo "已删除根目录匹配关键词的 PDF 文件"
+          echo "✅ 已删除根目录匹配关键词的 PDF 文件"
 
-      # 提交并推送变更
+      # 提交变更
       - name: Commit and push changes
         uses: ad-m/github-push-action@master
         with:
